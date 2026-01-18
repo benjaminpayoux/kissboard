@@ -186,6 +186,7 @@ export function TaskModal({
                           onClick={() => setLightboxImage(getImageUrl(image.data))}
                           className="w-full aspect-square rounded-lg overflow-hidden border border-border hover:border-accent/20 transition-colors duration-200"
                         >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={getImageUrl(image.data)}
                             alt={image.name}
@@ -251,6 +252,7 @@ export function TaskModal({
           >
             <X className="w-6 h-6" />
           </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={lightboxImage}
             alt="Full size image"

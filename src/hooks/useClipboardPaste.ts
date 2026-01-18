@@ -7,7 +7,10 @@ export function useClipboardPaste(
   enabled: boolean = true
 ) {
   const callbackRef = useRef(onImagePaste);
-  callbackRef.current = onImagePaste;
+
+  useEffect(() => {
+    callbackRef.current = onImagePaste;
+  }, [onImagePaste]);
 
   const handlePaste = useCallback((e: ClipboardEvent) => {
     const items = e.clipboardData?.items;

@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   DndContext,
   DragEndEvent,
-  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -55,9 +54,7 @@ export function Board({ projectId }: BoardProps) {
     }
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    // Optional: handle drag over for visual feedback
-  };
+  const handleDragOver = () => {};
 
   const handleDragEnd = async (event: DragEndEvent) => {
     setActiveTask(null);
