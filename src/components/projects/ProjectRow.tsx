@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSortable, defaultAnimateLayoutChanges, AnimateLayoutChanges } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, GripVertical } from "lucide-react";
-import { useProjectTaskCount } from "@/lib/db/hooks";
+import { useProjectProgress } from "@/lib/db/hooks";
 import type { Project } from "@/lib/types";
 
 const animateLayoutChanges: AnimateLayoutChanges = (args) => {
@@ -21,7 +21,7 @@ interface ProjectRowProps {
 }
 
 export function ProjectRow({ project, isOverlay = false }: ProjectRowProps) {
-  const taskCount = useProjectTaskCount(project.id);
+  const { total, progress } = useProjectProgress(project.id);
 
   const {
     attributes,
@@ -49,8 +49,21 @@ export function ProjectRow({ project, isOverlay = false }: ProjectRowProps) {
               {project.name}
             </span>
             <div className="flex items-center gap-4 shrink-0">
+              {total > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono tabular-nums w-8">
+                    {progress}%
+                  </span>
+                </div>
+              )}
               <span className="text-sm text-muted-foreground">
-                <span className="font-mono tabular-nums">{taskCount}</span> {taskCount === 1 ? "task" : "tasks"}
+                <span className="font-mono tabular-nums">{total}</span> {total === 1 ? "task" : "tasks"}
               </span>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
@@ -75,7 +88,7 @@ export function ProjectRow({ project, isOverlay = false }: ProjectRowProps) {
             <span className="font-medium invisible">{project.name}</span>
             <div className="flex items-center gap-4 shrink-0">
               <span className="text-sm invisible">
-                <span className="font-mono tabular-nums">{taskCount}</span> {taskCount === 1 ? "task" : "tasks"}
+                <span className="font-mono tabular-nums">{total}</span> {total === 1 ? "task" : "tasks"}
               </span>
               <ChevronRight className="w-4 h-4 invisible" />
             </div>
@@ -106,8 +119,21 @@ export function ProjectRow({ project, isOverlay = false }: ProjectRowProps) {
             {project.name}
           </span>
           <div className="flex items-center gap-4 shrink-0">
+            {total > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground font-mono tabular-nums w-8">
+                  {progress}%
+                </span>
+              </div>
+            )}
             <span className="text-sm text-muted-foreground">
-              <span className="font-mono tabular-nums">{taskCount}</span> {taskCount === 1 ? "task" : "tasks"}
+              <span className="font-mono tabular-nums">{total}</span> {total === 1 ? "task" : "tasks"}
             </span>
             <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
           </div>

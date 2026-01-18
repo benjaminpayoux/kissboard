@@ -250,6 +250,18 @@ export function useProjectTaskCount(projectId: string) {
   return count ?? 0;
 }
 
+export function useProjectProgress(projectId: string) {
+  const stats = useLiveQuery(async () => {
+    const tasks = await db.tasks.where("projectId").equals(projectId).toArray();
+    const total = tasks.length;
+    const done = tasks.filter((t) => t.status === "done").length;
+    const progress = total === 0 ? 0 : Math.round((done / total) * 100);
+    return { total, done, progress };
+  }, [projectId]);
+
+  return stats ?? { total: 0, done: 0, progress: 0 };
+}
+
 export function useHasProjects() {
   const count = useLiveQuery(() => db.projects.count());
   return count !== undefined && count > 0;
