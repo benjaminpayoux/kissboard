@@ -48,21 +48,12 @@ export default function Home() {
           A local-first kanban board that respects your privacy. No accounts, no
           servers, no complexity. Just you and your tasks.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/projects">
-            <Button className="text-base px-6 py-3">
-              Get Started
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-          {hasProjects && (
-            <Link href="/projects">
-              <Button variant="outline" className="text-base px-6 py-3">
-                View my projects
-              </Button>
-            </Link>
-          )}
-        </div>
+        <Link href="/projects">
+          <Button className="text-base px-8 py-4">
+            {hasProjects ? "View my projects" : "Get Started"}
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
       </section>
 
       <section className="max-w-5xl mx-auto px-6 py-16">
