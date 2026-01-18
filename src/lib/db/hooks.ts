@@ -7,14 +7,22 @@ import type { Project, Task, TaskImage, TaskStatus } from "../types";
 
 export function useProjects() {
   const projects = useLiveQuery(() =>
-    db.projects.orderBy("updatedAt").reverse().toArray()
+    db.projects.orderBy("position").toArray()
   );
+
+  const getNextPosition = async (): Promise<number> => {
+    const allProjects = await db.projects.toArray();
+    if (allProjects.length === 0) return 0;
+    return Math.max(...allProjects.map((p) => p.position)) + 1;
+  };
 
   const createProject = async (name: string): Promise<Project> => {
     const now = new Date();
+    const position = await getNextPosition();
     const project: Project = {
       id: uuidv4(),
       name,
+      position,
       createdAt: now,
       updatedAt: now,
     };
@@ -29,6 +37,37 @@ export function useProjects() {
     await db.projects.update(id, { ...updates, updatedAt: new Date() });
   };
 
+  const moveProject = async (id: string, newPosition: number) => {
+    await db.transaction("rw", db.projects, async () => {
+      const project = await db.projects.get(id);
+      if (!project) return;
+
+      const oldPosition = project.position;
+      if (oldPosition === newPosition) return;
+
+      const allProjects = await db.projects
+        .filter((p) => p.id !== id)
+        .toArray();
+
+      for (const p of allProjects) {
+        if (oldPosition < newPosition) {
+          if (p.position > oldPosition && p.position <= newPosition) {
+            await db.projects.update(p.id, { position: p.position - 1 });
+          }
+        } else {
+          if (p.position >= newPosition && p.position < oldPosition) {
+            await db.projects.update(p.id, { position: p.position + 1 });
+          }
+        }
+      }
+
+      await db.projects.update(id, {
+        position: newPosition,
+        updatedAt: new Date(),
+      });
+    });
+  };
+
   const deleteProject = async (id: string) => {
     await db.transaction("rw", [db.projects, db.tasks, db.images], async () => {
       const tasks = await db.tasks.where("projectId").equals(id).toArray();
@@ -40,7 +79,7 @@ export function useProjects() {
     });
   };
 
-  return { projects, createProject, updateProject, deleteProject };
+  return { projects, createProject, updateProject, moveProject, deleteProject };
 }
 
 export function useProject(id: string) {

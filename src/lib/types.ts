@@ -3,6 +3,7 @@ export type TaskStatus = "todo" | "in_progress" | "done";
 export interface Project {
   id: string;
   name: string;
+  position: number;
   createdAt: Date;
   updatedAt: Date;
 }
