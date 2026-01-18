@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useProjects } from "@/lib/db/hooks";
 
 interface CreateProjectModalProps {
@@ -38,35 +45,34 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="New Project">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor="project-name"
-            className="block text-sm font-medium mb-2"
-          >
-            Project Name
-          </label>
-          <input
-            id="project-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="My Project"
-            className="w-full px-4 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors duration-200"
-            autoFocus
-            required
-          />
-        </div>
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!name.trim() || isLoading}>
-            {isLoading ? "Creating..." : "Create Project"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Project</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="project-name">Project Name</Label>
+            <Input
+              id="project-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="My Project"
+              autoFocus
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!name.trim() || isLoading}>
+              {isLoading ? "Creating..." : "Create Project"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

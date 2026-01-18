@@ -29,13 +29,13 @@ export function Column({ status, title, tasks, onAddTask, onEditTask }: ColumnPr
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold">{title}</h2>
-          <span className="text-sm text-muted font-mono bg-column px-2 py-0.5 rounded">
+          <span className="text-sm text-muted-foreground font-mono bg-column px-2 py-0.5 rounded">
             {tasks.length}
           </span>
         </div>
         <button
           onClick={() => onAddTask(status)}
-          className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-column transition-colors duration-200"
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-column transition-colors duration-200"
           aria-label={`Add task to ${title}`}
         >
           <Plus className="w-4 h-4" />
@@ -47,7 +47,7 @@ export function Column({ status, title, tasks, onAddTask, onEditTask }: ColumnPr
         className={`
           flex-1 bg-column rounded-xl p-3 min-h-[200px]
           transition-colors duration-200
-          ${isOver ? "bg-accent/5 ring-2 ring-accent/20" : ""}
+          ${isOver ? "bg-primary/5 ring-2 ring-ring" : ""}
         `}
       >
         <SortableContext
@@ -62,7 +62,7 @@ export function Column({ status, title, tasks, onAddTask, onEditTask }: ColumnPr
         </SortableContext>
 
         {tasks.length === 0 && (
-          <div className="flex items-center justify-center h-full min-h-[150px] text-muted text-sm">
+          <div className="flex items-center justify-center h-full min-h-[150px] text-muted-foreground text-sm">
             Drop tasks here
           </div>
         )}

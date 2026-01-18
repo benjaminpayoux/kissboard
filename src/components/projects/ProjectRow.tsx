@@ -42,19 +42,19 @@ export function ProjectRow({ project }: ProjectRowProps) {
         className="flex items-center justify-center w-10 h-full py-4 cursor-grab active:cursor-grabbing touch-none"
         aria-label="Drag to reorder"
       >
-        <GripVertical className="w-4 h-4 text-muted/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        <GripVertical className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
       </button>
 
       <Link href={`/project/${project.id}`} className="flex-1 min-w-0">
         <div className="flex items-center justify-between px-2 pr-5 py-4">
-          <span className="font-medium transition-colors duration-300 group-hover:text-accent truncate">
+          <span className="font-medium text-foreground truncate">
             {project.name}
           </span>
           <div className="flex items-center gap-4 flex-shrink-0">
-            <span className="text-sm text-muted">
+            <span className="text-sm text-muted-foreground">
               <span className="font-mono tabular-nums">{taskCount}</span> {taskCount === 1 ? "task" : "tasks"}
             </span>
-            <ChevronRight className="w-4 h-4 text-muted/50 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
           </div>
         </div>
       </Link>
@@ -72,19 +72,19 @@ export function ProjectRowOverlay({ project }: ProjectRowOverlayProps) {
   return (
     <div className="flex items-center bg-surface border border-border rounded-xl opacity-80 shadow-lg">
       <div className="flex items-center justify-center w-10 h-full py-4">
-        <GripVertical className="w-4 h-4 text-muted/50" />
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between px-2 pr-5 py-4">
-          <span className="font-medium text-accent truncate">
+          <span className="font-medium text-foreground truncate">
             {project.name}
           </span>
           <div className="flex items-center gap-4 flex-shrink-0">
-            <span className="text-sm text-muted">
+            <span className="text-sm text-muted-foreground">
               <span className="font-mono tabular-nums">{taskCount}</span> {taskCount === 1 ? "task" : "tasks"}
             </span>
-            <ChevronRight className="w-4 h-4 text-muted/50" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
         </div>
       </div>

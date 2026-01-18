@@ -41,14 +41,14 @@ export function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
       className={`
         bg-surface border border-border rounded-lg p-4 cursor-pointer
         transition-all duration-200
-        hover:shadow-md hover:border-accent/20
+        hover:shadow-md hover:border-ring
         ${isBeingDragged ? "shadow-lg opacity-90 rotate-2 scale-105" : ""}
       `}
     >
       <h3 className="font-medium text-sm line-clamp-2">{task.title}</h3>
 
       {imageCount > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-muted text-xs">
+        <div className="flex items-center gap-1 mt-2 text-muted-foreground text-xs">
           <ImageIcon className="w-3.5 h-3.5" />
           <span className="font-mono">{imageCount}</span>
         </div>

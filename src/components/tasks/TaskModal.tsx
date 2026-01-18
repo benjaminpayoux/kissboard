@@ -2,8 +2,27 @@
 
 import { useState, useCallback } from "react";
 import { Trash2, Upload, X, ImageIcon } from "lucide-react";
-import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTasks, useTaskImages } from "@/lib/db/hooks";
 import { useClipboardPaste } from "@/hooks/useClipboardPaste";
 import { compressImage, validateImage } from "@/lib/utils/image";
@@ -30,6 +49,8 @@ export function TaskModal({
   const [description, setDescription] = useState(task?.description ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { updateTask, deleteTask } = useTasks(projectId);
   const { images, addImage, deleteImage } = useTaskImages(task?.id ?? "");
@@ -40,16 +61,17 @@ export function TaskModal({
 
       const validation = validateImage(file);
       if (!validation.valid) {
-        alert(validation.error);
+        setErrorMessage(validation.error ?? "Invalid image");
         return;
       }
 
       try {
         const compressedBlob = await compressImage(file);
         await addImage(compressedBlob, file.name, file.type);
+        setErrorMessage(null);
       } catch (error) {
         console.error("Failed to add image:", error);
-        alert("Failed to add image. Please try again.");
+        setErrorMessage("Failed to add image. Please try again.");
       }
     },
     [task, addImage]
@@ -88,17 +110,13 @@ export function TaskModal({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteConfirm = async () => {
     if (!task || isLoading) return;
-
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this task? This action cannot be undone."
-    );
-    if (!confirmed) return;
 
     setIsLoading(true);
     try {
       await deleteTask(task.id);
+      setShowDeleteConfirm(false);
       onClose();
     } finally {
       setIsLoading(false);
@@ -108,6 +126,7 @@ export function TaskModal({
   const handleClose = () => {
     setTitle(task?.title ?? "");
     setDescription(task?.description ?? "");
+    setErrorMessage(null);
     onClose();
   };
 
@@ -117,128 +136,146 @@ export function TaskModal({
 
   return (
     <>
-      <Modal
-        isOpen={isOpen}
-        onClose={handleClose}
-        title={mode === "create" ? "New Task" : "Edit Task"}
-        maxWidth="lg"
-      >
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="task-title" className="block text-sm font-medium mb-2">
-              Title
-            </label>
-            <input
-              id="task-title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task title"
-              className="w-full px-4 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors duration-200"
-              autoFocus
-              required
-            />
-          </div>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{mode === "create" ? "New Task" : "Edit Task"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {errorMessage && (
+              <Alert variant="destructive">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
 
-          {mode === "edit" && (
-            <>
-              <div>
-                <label
-                  htmlFor="task-description"
-                  className="block text-sm font-medium mb-2"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="task-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add a description..."
-                  rows={4}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors duration-200 resize-none"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-title">Title</Label>
+              <Input
+                id="task-title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Task title"
+                autoFocus
+                required
+              />
+            </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium">Images</label>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <span className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors duration-200">
-                      <Upload className="w-4 h-4" />
-                      Upload
-                    </span>
-                  </label>
+            {mode === "edit" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="task-description">Description</Label>
+                  <Textarea
+                    id="task-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Add a description..."
+                    rows={4}
+                    className="resize-none"
+                  />
                 </div>
 
-                {images && images.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-3">
-                    {images.map((image) => (
-                      <div key={image.id} className="relative group">
-                        <button
-                          type="button"
-                          onClick={() => setLightboxImage(getImageUrl(image.data))}
-                          className="w-full aspect-square rounded-lg overflow-hidden border border-border hover:border-accent/20 transition-colors duration-200"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getImageUrl(image.data)}
-                            alt={image.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteImage(image.id)}
-                          className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          aria-label="Delete image"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Images</Label>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                        multiple
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+                        <Upload className="w-4 h-4" />
+                        Upload
+                      </span>
+                    </label>
                   </div>
-                ) : (
-                  <div className="border border-dashed border-border rounded-lg p-8 text-center text-muted">
-                    <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">
-                      Paste or upload images
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
 
-          <div className="flex items-center justify-between pt-2">
-            {mode === "edit" && task && (
-              <Button
-                type="button"
-                variant="danger"
-                onClick={handleDelete}
-                disabled={isLoading}
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </Button>
+                  {images && images.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-3">
+                      {images.map((image) => (
+                        <div key={image.id} className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setLightboxImage(getImageUrl(image.data))}
+                            className="w-full aspect-square rounded-lg overflow-hidden border border-border hover:border-ring transition-colors duration-200"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getImageUrl(image.data)}
+                              alt={image.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteImage(image.id)}
+                            className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            aria-label="Delete image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="border border-dashed border-border rounded-lg p-8 text-center text-muted-foreground">
+                      <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">
+                        Paste or upload images
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-            <div className={`flex gap-3 ${mode === "create" ? "ml-auto" : ""}`}>
-              <Button type="button" variant="secondary" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!title.trim() || isLoading}>
-                {isLoading ? "Saving..." : mode === "create" ? "Create" : "Save"}
-              </Button>
+
+            <div className="flex items-center justify-between pt-2">
+              {mode === "edit" && task && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isLoading}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </Button>
+              )}
+              <div className={`flex gap-3 ${mode === "create" ? "ml-auto" : ""}`}>
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!title.trim() || isLoading}>
+                  {isLoading ? "Saving..." : mode === "create" ? "Create" : "Save"}
+                </Button>
+              </div>
             </div>
-          </div>
-        </form>
-      </Modal>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {lightboxImage && (
         <div

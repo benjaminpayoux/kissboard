@@ -1,11 +1,21 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Board } from "@/components/board/Board";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useProject, useProjects } from "@/lib/db/hooks";
 
 interface PageProps {
@@ -17,13 +27,9 @@ export default function ProjectPage({ params }: PageProps) {
   const project = useProject(id);
   const { deleteProject } = useProjects();
   const router = useRouter();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this project? All tasks and images will be permanently removed."
-    );
-    if (!confirmed) return;
-
+  const handleDeleteConfirm = async () => {
     await deleteProject(id);
     router.push("/projects");
   };
@@ -31,7 +37,7 @@ export default function ProjectPage({ params }: PageProps) {
   if (project === undefined) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="text-muted">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </main>
     );
   }
@@ -39,9 +45,9 @@ export default function ProjectPage({ params }: PageProps) {
   if (project === null) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-muted">Project not found</p>
+        <p className="text-muted-foreground">Project not found</p>
         <Link href="/projects">
-          <Button variant="secondary">
+          <Button variant="outline">
             <ArrowLeft className="w-4 h-4" />
             Back to Projects
           </Button>
@@ -57,13 +63,13 @@ export default function ProjectPage({ params }: PageProps) {
           <div className="flex items-center gap-4">
             <Link
               href="/projects"
-              className="text-muted hover:text-foreground transition-colors duration-200"
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <h1 className="text-2xl font-bold">{project.name}</h1>
           </div>
-          <Button variant="ghost" onClick={handleDelete}>
+          <Button variant="ghost" onClick={() => setShowDeleteConfirm(true)}>
             <Trash2 className="w-4 h-4" />
             Delete Project
           </Button>
@@ -71,6 +77,26 @@ export default function ProjectPage({ params }: PageProps) {
 
         <Board projectId={id} />
       </div>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this project? All tasks and images will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

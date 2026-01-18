@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, HardDrive, GripVertical, Image, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHasProjects } from "@/lib/db/hooks";
 
 const features = [
@@ -41,9 +42,9 @@ export default function Home() {
         <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6">
           Simple task management,
           <br />
-          <span className="text-muted">done right.</span>
+          <span className="text-muted-foreground">done right.</span>
         </h1>
-        <p className="text-lg text-muted max-w-2xl mx-auto mb-10">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
           A local-first kanban board that respects your privacy. No accounts, no
           servers, no complexity. Just you and your tasks.
         </p>
@@ -56,7 +57,7 @@ export default function Home() {
           </Link>
           {hasProjects && (
             <Link href="/projects">
-              <Button variant="secondary" className="text-base px-6 py-3">
+              <Button variant="outline" className="text-base px-6 py-3">
                 View my projects
               </Button>
             </Link>
@@ -67,22 +68,23 @@ export default function Home() {
       <section className="max-w-5xl mx-auto px-6 py-16">
         <div className="grid md:grid-cols-2 gap-6">
           {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="bg-surface border border-border rounded-xl p-6 transition-shadow duration-200 hover:shadow-lg"
-            >
-              <div className="w-10 h-10 bg-column rounded-lg flex items-center justify-center mb-4">
-                <feature.icon className="w-5 h-5 text-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted">{feature.description}</p>
-            </div>
+            <Card key={feature.title} className="transition-shadow duration-200 hover:shadow-lg">
+              <CardHeader>
+                <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center mb-2">
+                  <feature.icon className="w-5 h-5 text-foreground" />
+                </div>
+                <CardTitle>{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base">{feature.description}</CardDescription>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
 
       <footer className="max-w-5xl mx-auto px-6 py-12 border-t border-border">
-        <p className="text-center text-sm text-muted">
+        <p className="text-center text-sm text-muted-foreground">
           Built with the KISS philosophy. Open source and privacy-first.
         </p>
       </footer>

@@ -72,8 +72,8 @@ export function ProjectList({ projects }: ProjectListProps) {
   if (localProjects.length === 0) {
     return (
       <div className="text-center py-16">
-        <p className="text-muted text-lg">No projects yet.</p>
-        <p className="text-muted mt-1">Create your first project to get started.</p>
+        <p className="text-muted-foreground text-lg">No projects yet.</p>
+        <p className="text-muted-foreground mt-1">Create your first project to get started.</p>
       </div>
     );
   }
