@@ -18,15 +18,13 @@ interface ColumnProps {
 }
 
 export function Column({ status, title, tasks, onAddTask, onEditTask }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id: status,
   });
 
-  const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
-
   return (
-    <div className="flex flex-col min-w-[300px] w-full max-w-[350px]">
-      <div className="flex items-center justify-between mb-4">
+    <div className="min-w-[300px] w-full max-w-[350px] flex flex-col max-h-full">
+      <div className="flex items-center justify-between mb-4 shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold">{title}</h2>
           <span className="text-sm text-muted-foreground font-mono bg-column px-2 py-0.5 rounded">
@@ -44,28 +42,22 @@ export function Column({ status, title, tasks, onAddTask, onEditTask }: ColumnPr
 
       <div
         ref={setNodeRef}
-        className={`
-          flex-1 bg-column rounded-xl p-3 min-h-[200px]
-          transition-colors duration-200
-          ${isOver ? "bg-primary/5 ring-2 ring-ring" : ""}
-        `}
+        className="bg-column rounded-xl p-3 flex-1 overflow-y-auto min-h-[78px] scrollbar-hidden"
       >
         <SortableContext
-          items={sortedTasks.map((t) => t.id)}
+          items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
           <div className="space-y-3">
-            {sortedTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onClick={() => onEditTask(task)} />
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onClick={() => onEditTask(task)}
+              />
             ))}
           </div>
         </SortableContext>
-
-        {tasks.length === 0 && (
-          <div className="flex items-center justify-center h-full min-h-[150px] text-muted-foreground text-sm">
-            Drop tasks here
-          </div>
-        )}
       </div>
     </div>
   );

@@ -57,9 +57,9 @@ export default function ProjectPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+    <main className="h-screen flex flex-col">
+      <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col flex-1 min-h-0 w-full">
+        <div className="flex items-center justify-between mb-8 shrink-0">
           <div className="flex items-center gap-4">
             <Link
               href="/projects"
@@ -75,7 +75,9 @@ export default function ProjectPage({ params }: PageProps) {
           </Button>
         </div>
 
-        <Board projectId={id} />
+        <div className="flex-1 min-h-0">
+          <Board projectId={id} />
+        </div>
       </div>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

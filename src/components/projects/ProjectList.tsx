@@ -11,6 +11,8 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  defaultDropAnimationSideEffects,
+  DropAnimation,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -19,9 +21,21 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { ProjectRow, ProjectRowOverlay } from "./ProjectRow";
+import { ProjectRow } from "./ProjectRow";
 import { useProjects } from "@/lib/db/hooks";
 import type { Project } from "@/lib/types";
+
+const dropAnimation: DropAnimation = {
+  duration: 150,
+  easing: "ease-out",
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: "0",
+      },
+    },
+  }),
+};
 
 interface ProjectListProps {
   projects: Project[];
@@ -30,25 +44,23 @@ interface ProjectListProps {
 export function ProjectList({ projects }: ProjectListProps) {
   const { moveProject } = useProjects();
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const [localProjects, setLocalProjects] = useState(projects);
+  const [optimisticProjects, setOptimisticProjects] = useState<Project[] | null>(null);
 
   useEffect(() => {
-    setLocalProjects(projects);
+    queueMicrotask(() => setOptimisticProjects(null));
   }, [projects]);
 
+  const displayedProjects = optimisticProjects ?? projects;
+
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const project = localProjects.find((p) => p.id === event.active.id);
+    const project = displayedProjects.find((p) => p.id === event.active.id);
     if (project) {
       setActiveProject(project);
     }
@@ -60,16 +72,18 @@ export function ProjectList({ projects }: ProjectListProps) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const activeIndex = localProjects.findIndex((p) => p.id === active.id);
-    const overIndex = localProjects.findIndex((p) => p.id === over.id);
+    const activeIndex = displayedProjects.findIndex((p) => p.id === active.id);
+    const overIndex = displayedProjects.findIndex((p) => p.id === over.id);
 
     if (activeIndex !== -1 && overIndex !== -1) {
-      setLocalProjects(arrayMove(localProjects, activeIndex, overIndex));
-      await moveProject(active.id as string, overIndex);
+      const reordered = arrayMove(displayedProjects, activeIndex, overIndex);
+      setOptimisticProjects(reordered);
+      const newPosition = reordered.findIndex((p) => p.id === active.id);
+      await moveProject(active.id as string, newPosition);
     }
   };
 
-  if (localProjects.length === 0) {
+  if (projects.length === 0) {
     return (
       <div className="text-center py-16">
         <p className="text-muted-foreground text-lg">No projects yet.</p>
@@ -87,18 +101,18 @@ export function ProjectList({ projects }: ProjectListProps) {
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={localProjects.map((p) => p.id)}
+        items={displayedProjects.map((p) => p.id)}
         strategy={verticalListSortingStrategy}
       >
         <div className="flex flex-col gap-3">
-          {localProjects.map((project) => (
+          {displayedProjects.map((project) => (
             <ProjectRow key={project.id} project={project} />
           ))}
         </div>
       </SortableContext>
 
-      <DragOverlay>
-        {activeProject ? <ProjectRowOverlay project={activeProject} /> : null}
+      <DragOverlay dropAnimation={dropAnimation}>
+        {activeProject ? <ProjectRow project={activeProject} isOverlay /> : null}
       </DragOverlay>
     </DndContext>
   );
