@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Board } from "@/components/board/Board";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useProject, useProjects } from "@/lib/db/hooks";
 
 interface PageProps {
@@ -28,35 +41,23 @@ export default function ProjectPage({ params }: PageProps) {
   const { deleteProject, updateProject } = useProjects();
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [editName, setEditName] = useState("");
+  const [addTaskTrigger, setAddTaskTrigger] = useState(0);
 
-  const startEditing = () => {
+  const openRenameDialog = () => {
     if (!project) return;
     setEditName(project.name);
-    setIsEditing(true);
+    setShowRenameDialog(true);
   };
 
-  const saveEdit = async () => {
+  const handleRename = async () => {
     if (!project) return;
     const trimmed = editName.trim();
     if (trimmed && trimmed !== project.name) {
       await updateProject(id, { name: trimmed });
     }
-    setIsEditing(false);
-  };
-
-  const cancelEdit = () => {
-    setIsEditing(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      saveEdit();
-    } else if (e.key === "Escape") {
-      cancelEdit();
-    }
+    setShowRenameDialog(false);
   };
 
   const handleDeleteConfirm = async () => {
@@ -97,41 +98,68 @@ export default function ProjectPage({ params }: PageProps) {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onBlur={saveEdit}
-                onFocus={(e) => e.target.select()}
-                className="text-2xl font-bold bg-transparent border-b-2 border-primary outline-none px-0"
-                autoFocus
-              />
-            ) : (
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{project.name}</h1>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={startEditing}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Pencil className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
+            <h1 className="text-2xl font-bold">{project.name}</h1>
           </div>
-          <Button variant="ghost" onClick={() => setShowDeleteConfirm(true)}>
-            <Trash2 className="w-4 h-4" />
-            Delete Project
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={openRenameDialog}>
+                <Pencil className="w-4 h-4" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="mb-8 shrink-0">
+          <Button onClick={() => setAddTaskTrigger((n) => n + 1)}>
+            <Plus className="w-4 h-4" />
+            New Task
           </Button>
         </div>
 
         <div className="flex-1 min-h-0">
-          <Board projectId={id} />
+          <Board projectId={id} requestAddTask={addTaskTrigger} />
         </div>
       </div>
+
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+          </DialogHeader>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleRename();
+              }
+            }}
+            className="w-full px-3 py-2 border rounded-md bg-background"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>

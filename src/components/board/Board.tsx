@@ -39,6 +39,7 @@ const dropAnimation: DropAnimation = {
 
 interface BoardProps {
   projectId: string;
+  requestAddTask?: number;
 }
 
 const columns: { status: TaskStatus; title: string }[] = [
@@ -47,7 +48,7 @@ const columns: { status: TaskStatus; title: string }[] = [
   { status: "done", title: "Done" },
 ];
 
-export function Board({ projectId }: BoardProps) {
+export function Board({ projectId, requestAddTask }: BoardProps) {
   const { tasks: dbTasks, createTask, moveTask } = useTasks(projectId);
   const [optimisticTasks, setOptimisticTasks] = useState<Task[] | null>(null);
   const [pendingMove, setPendingMove] = useState<{ taskId: string; status: TaskStatus; position: number } | null>(null);
@@ -57,6 +58,13 @@ export function Board({ projectId }: BoardProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createStatus, setCreateStatus] = useState<TaskStatus>("todo");
+  const [lastAddRequest, setLastAddRequest] = useState(requestAddTask);
+
+  if (requestAddTask !== undefined && requestAddTask !== lastAddRequest) {
+    setLastAddRequest(requestAddTask);
+    setCreateStatus("todo");
+    setIsCreateModalOpen(true);
+  }
 
   useEffect(() => {
     if (!pendingMove || !dbTasks) return;
@@ -230,11 +238,6 @@ export function Board({ projectId }: BoardProps) {
     await moveTask(activeId, overStatus, newPosition);
   };
 
-  const handleAddTask = (status: TaskStatus) => {
-    setCreateStatus(status);
-    setIsCreateModalOpen(true);
-  };
-
   const handleCreateTask = async (title: string) => {
     await createTask(title, createStatus);
     setIsCreateModalOpen(false);
@@ -249,14 +252,13 @@ export function Board({ projectId }: BoardProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex items-start gap-6 overflow-x-auto h-full p-1 -m-1 pb-4">
+        <div className="flex items-start gap-6 h-full p-1 -m-1 pb-4">
           {columns.map((column) => (
             <Column
               key={column.status}
               status={column.status}
               title={column.title}
               tasks={getTasksByStatus(column.status)}
-              onAddTask={handleAddTask}
               onEditTask={setEditingTask}
             />
           ))}
