@@ -31,7 +31,7 @@ export function Column({ status, title, tasks, onEditTask }: ColumnProps) {
 
       <div
         ref={setNodeRef}
-        className="bg-column rounded-xl p-2 flex-1 overflow-y-auto min-h-[78px] scrollbar-hidden"
+        className="bg-column rounded-xl p-2 flex-1 overflow-y-auto min-h-[70px] scrollbar-hidden"
       >
         <SortableContext
           items={tasks.map((t) => t.id)}

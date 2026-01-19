@@ -89,7 +89,7 @@ export default function ProjectPage({ params }: PageProps) {
 
   return (
     <main className="h-screen flex flex-col">
-      <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col flex-1 min-h-0 w-full">
+      <div className="max-w-5xl mx-auto px-6 py-12 flex flex-col flex-1 min-h-0 w-full">
         <div className="flex items-center justify-between mb-8 shrink-0">
           <div className="flex items-center gap-4">
             <Link
@@ -98,7 +98,7 @@ export default function ProjectPage({ params }: PageProps) {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-2xl font-bold">{project.name}</h1>
+            <h1 className="text-3xl font-bold">{project.name}</h1>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
