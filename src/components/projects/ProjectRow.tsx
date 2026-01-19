@@ -57,12 +57,12 @@ export function ProjectRow({ project, isOverlay = false }: ProjectRowProps) {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <span className="text-xs text-muted-foreground font-mono tabular-nums w-8">
+                  <span className="text-xs text-muted-foreground font-mono tabular-nums w-9 text-right">
                     {progress}%
                   </span>
                 </div>
               )}
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground w-16 text-right">
                 <span className="font-mono tabular-nums">{total}</span> {total === 1 ? "task" : "tasks"}
               </span>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -127,12 +127,12 @@ export function ProjectRow({ project, isOverlay = false }: ProjectRowProps) {
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-xs text-muted-foreground font-mono tabular-nums w-8">
+                <span className="text-xs text-muted-foreground font-mono tabular-nums w-9 text-right">
                   {progress}%
                 </span>
               </div>
             )}
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground w-16 text-right">
               <span className="font-mono tabular-nums">{total}</span> {total === 1 ? "task" : "tasks"}
             </span>
             <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />

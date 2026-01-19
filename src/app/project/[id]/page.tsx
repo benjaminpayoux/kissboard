@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { Board } from "@/components/board/Board";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,9 +25,39 @@ interface PageProps {
 export default function ProjectPage({ params }: PageProps) {
   const { id } = use(params);
   const project = useProject(id);
-  const { deleteProject } = useProjects();
+  const { deleteProject, updateProject } = useProjects();
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+
+  const startEditing = () => {
+    if (!project) return;
+    setEditName(project.name);
+    setIsEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!project) return;
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== project.name) {
+      await updateProject(id, { name: trimmed });
+    }
+    setIsEditing(false);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === "Escape") {
+      cancelEdit();
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     await deleteProject(id);
@@ -67,7 +97,30 @@ export default function ProjectPage({ params }: PageProps) {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-2xl font-bold">{project.name}</h1>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={saveEdit}
+                onFocus={(e) => e.target.select()}
+                className="text-2xl font-bold bg-transparent border-b-2 border-primary outline-none px-0"
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">{project.name}</h1>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={startEditing}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
           <Button variant="ghost" onClick={() => setShowDeleteConfirm(true)}>
             <Trash2 className="w-4 h-4" />
