@@ -2,7 +2,7 @@
 
 import { useSortable, defaultAnimateLayoutChanges, AnimateLayoutChanges } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, AlignLeft } from "lucide-react";
 import { useTaskImageCount } from "@/lib/db/hooks";
 import type { Task } from "@/lib/types";
 
@@ -37,10 +37,15 @@ function TaskCardPresentational({
       `}
     >
       <h3 className="font-medium text-sm line-clamp-2">{task.title}</h3>
-      {imageCount > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-muted-foreground text-xs">
-          <ImageIcon className="w-3.5 h-3.5" />
-          <span className="font-mono">{imageCount}</span>
+      {(task.description || imageCount > 0) && (
+        <div className="flex items-center gap-3 mt-2 text-muted-foreground text-xs">
+          {task.description && <AlignLeft className="w-3.5 h-3.5" />}
+          {imageCount > 0 && (
+            <div className="flex items-center gap-1">
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span className="font-mono">{imageCount}</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -74,10 +79,15 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       {isDragging ? (
         <div className="bg-primary/10 border border-dashed border-primary/40 rounded-lg p-4 opacity-100">
           <h3 className="font-medium text-sm line-clamp-2 invisible">{task.title}</h3>
-          {imageCount > 0 && (
-            <div className="flex items-center gap-1 mt-2 text-xs invisible">
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span className="font-mono">{imageCount}</span>
+          {(task.description || imageCount > 0) && (
+            <div className="flex items-center gap-3 mt-2 text-xs invisible">
+              {task.description && <AlignLeft className="w-3.5 h-3.5" />}
+              {imageCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span className="font-mono">{imageCount}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

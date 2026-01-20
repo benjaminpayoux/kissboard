@@ -238,9 +238,10 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
     await moveTask(activeId, overStatus, newPosition);
   };
 
-  const handleCreateTask = async (title: string) => {
-    await createTask(title, createStatus);
+  const handleCreateTask = async (title: string, description: string): Promise<string> => {
+    const task = await createTask(title, createStatus, description);
     setIsCreateModalOpen(false);
+    return task.id;
   };
 
   return (

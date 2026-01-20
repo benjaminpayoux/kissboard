@@ -105,7 +105,8 @@ export function useTasks(projectId: string) {
 
   const createTask = async (
     title: string,
-    status: TaskStatus = "todo"
+    status: TaskStatus = "todo",
+    description: string = ""
   ): Promise<Task> => {
     const now = new Date();
     const position = await getNextPosition(status);
@@ -113,7 +114,7 @@ export function useTasks(projectId: string) {
       id: uuidv4(),
       projectId,
       title,
-      description: "",
+      description,
       status,
       position,
       createdAt: now,
