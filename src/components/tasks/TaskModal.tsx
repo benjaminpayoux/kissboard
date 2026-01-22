@@ -43,6 +43,8 @@ interface TaskModalProps {
   task?: Task;
   mode: "create" | "edit";
   onSubmit?: (title: string, description: string) => Promise<string>;
+  onDeleted?: (taskId: string) => void;
+  onUpdated?: () => void;
 }
 
 export function TaskModal({
@@ -52,6 +54,8 @@ export function TaskModal({
   task,
   mode,
   onSubmit,
+  onDeleted,
+  onUpdated,
 }: TaskModalProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
@@ -130,6 +134,7 @@ export function TaskModal({
           title: title.trim(),
           description: description.trim(),
         });
+        onUpdated?.();
         onClose();
       }
     } finally {
@@ -143,6 +148,7 @@ export function TaskModal({
     setIsLoading(true);
     try {
       await deleteTask(task.id);
+      onDeleted?.(task.id);
       setShowDeleteConfirm(false);
       onClose();
     } finally {

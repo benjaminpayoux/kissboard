@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -39,18 +39,12 @@ const dropAnimation: DropAnimation = {
 
 interface ProjectListProps {
   projects: Project[];
+  onReorder: (reorderedProjects: Project[]) => void;
 }
 
-export function ProjectList({ projects }: ProjectListProps) {
+export function ProjectList({ projects, onReorder }: ProjectListProps) {
   const { moveProject } = useProjects();
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const [optimisticProjects, setOptimisticProjects] = useState<Project[] | null>(null);
-
-  useEffect(() => {
-    queueMicrotask(() => setOptimisticProjects(null));
-  }, [projects]);
-
-  const displayedProjects = optimisticProjects ?? projects;
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -60,7 +54,7 @@ export function ProjectList({ projects }: ProjectListProps) {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const project = displayedProjects.find((p) => p.id === event.active.id);
+    const project = projects.find((p) => p.id === event.active.id);
     if (project) {
       setActiveProject(project);
     }
@@ -72,12 +66,12 @@ export function ProjectList({ projects }: ProjectListProps) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const activeIndex = displayedProjects.findIndex((p) => p.id === active.id);
-    const overIndex = displayedProjects.findIndex((p) => p.id === over.id);
+    const activeIndex = projects.findIndex((p) => p.id === active.id);
+    const overIndex = projects.findIndex((p) => p.id === over.id);
 
     if (activeIndex !== -1 && overIndex !== -1) {
-      const reordered = arrayMove(displayedProjects, activeIndex, overIndex);
-      setOptimisticProjects(reordered);
+      const reordered = arrayMove(projects, activeIndex, overIndex);
+      onReorder(reordered);
       const newPosition = reordered.findIndex((p) => p.id === active.id);
       await moveProject(active.id as string, newPosition);
     }
@@ -101,11 +95,11 @@ export function ProjectList({ projects }: ProjectListProps) {
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={displayedProjects.map((p) => p.id)}
+        items={projects.map((p) => p.id)}
         strategy={verticalListSortingStrategy}
       >
         <div className="flex flex-col gap-3">
-          {displayedProjects.map((project) => (
+          {projects.map((project) => (
             <ProjectRow key={project.id} project={project} />
           ))}
         </div>

@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
-import { useProjects } from "@/lib/db/hooks";
+import { fetchProjects } from "@/lib/db/hooks";
+import type { Project } from "@/lib/types";
 
 export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { projects } = useProjects();
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    fetchProjects().then(setProjects);
+  }, []);
+
+  const handleReorder = (reorderedProjects: Project[]) => {
+    setProjects(reorderedProjects);
+  };
 
   return (
     <main className="min-h-screen">
@@ -29,7 +38,7 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        <ProjectList projects={projects ?? []} />
+        <ProjectList projects={projects} onReorder={handleReorder} />
       </div>
 
       <CreateProjectModal

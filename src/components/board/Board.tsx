@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -20,7 +20,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Column } from "./Column";
 import { TaskCardOverlay } from "@/components/tasks/TaskCard";
 import { TaskModal } from "@/components/tasks/TaskModal";
-import { useTasks } from "@/lib/db/hooks";
+import { useTasks, fetchTasks } from "@/lib/db/hooks";
 import type { Task, TaskStatus } from "@/lib/types";
 
 const DROP_ANIMATION_DURATION = 150;
@@ -49,33 +49,27 @@ const columns: { status: TaskStatus; title: string }[] = [
 ];
 
 export function Board({ projectId, requestAddTask }: BoardProps) {
-  const { tasks: dbTasks, createTask, moveTask } = useTasks(projectId);
-  const [optimisticTasks, setOptimisticTasks] = useState<Task[] | null>(null);
-  const [pendingMove, setPendingMove] = useState<{ taskId: string; status: TaskStatus; position: number } | null>(null);
-  const tasks = optimisticTasks ?? dbTasks;
+  const { createTask, moveTask } = useTasks(projectId);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [droppingTask, setDroppingTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createStatus, setCreateStatus] = useState<TaskStatus>("todo");
-  const [lastAddRequest, setLastAddRequest] = useState(requestAddTask);
-
-  if (requestAddTask !== undefined && requestAddTask !== lastAddRequest) {
-    setLastAddRequest(requestAddTask);
-    setCreateStatus("todo");
-    setIsCreateModalOpen(true);
-  }
+  const lastAddRequestRef = useRef(requestAddTask);
 
   useEffect(() => {
-    if (!pendingMove || !dbTasks) return;
-    const dbTask = dbTasks.find((t) => t.id === pendingMove.taskId);
-    if (dbTask && dbTask.status === pendingMove.status && dbTask.position === pendingMove.position) {
-      queueMicrotask(() => {
-        setPendingMove(null);
-        setOptimisticTasks(null);
-      });
+    fetchTasks(projectId).then(setTasks);
+  }, [projectId]);
+
+  useEffect(() => {
+    if (requestAddTask !== undefined && requestAddTask !== lastAddRequestRef.current) {
+      lastAddRequestRef.current = requestAddTask;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Responding to prop change
+      setCreateStatus("todo");
+      setIsCreateModalOpen(true);
     }
-  }, [dbTasks, pendingMove]);
+  }, [requestAddTask]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -87,7 +81,7 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
 
   const getTasksByStatus = useCallback(
     (status: TaskStatus) => {
-      return (tasks ?? [])
+      return tasks
         .filter((t) => t.status === status)
         .sort((a, b) => a.position - b.position);
     },
@@ -95,40 +89,35 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const task = dbTasks?.find((t) => t.id === event.active.id);
+    const task = tasks.find((t) => t.id === event.active.id);
     if (task) {
-      setOptimisticTasks(dbTasks ?? []);
       setActiveTask(task);
     }
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over || !optimisticTasks) return;
+    if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = optimisticTasks.find((t) => t.id === activeId);
-    const overTask = optimisticTasks.find((t) => t.id === overId);
+    const activeRect = active.rect.current.translated;
+    const overRect = over.rect;
+    const isBelowMiddle = activeRect && overRect
+      ? activeRect.top > overRect.top + overRect.height / 2
+      : false;
 
-    if (!activeTask) return;
+    setTasks((prev) => {
+      const activeTaskItem = prev.find((t) => t.id === activeId);
+      const overTask = prev.find((t) => t.id === overId);
 
-    const overStatus = overTask ? overTask.status : (overId as TaskStatus);
-    const isValidColumn = columns.some((c) => c.status === overStatus);
+      if (!activeTaskItem) return prev;
 
-    if (activeTask.status !== overStatus && isValidColumn) {
-      const activeRect = active.rect.current.translated;
-      const overRect = over.rect;
-      const isBelowMiddle = activeRect && overRect
-        ? activeRect.top > overRect.top + overRect.height / 2
-        : false;
+      const overStatus = overTask ? overTask.status : (overId as TaskStatus);
+      const isValidColumn = columns.some((c) => c.status === overStatus);
 
-      setOptimisticTasks((prev) => {
-        if (!prev) return prev;
-        const task = prev.find((t) => t.id === activeId);
-        if (!task || task.status === overStatus) return prev;
-
+      if (activeTaskItem.status !== overStatus && isValidColumn) {
         const tasksInTargetColumn = prev
           .filter((t) => t.status === overStatus && t.id !== activeId)
           .sort((a, b) => a.position - b.position);
@@ -142,50 +131,51 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
           newPosition = tasksInTargetColumn.length;
         }
 
-        tasksInTargetColumn.splice(newPosition, 0, { ...task, status: overStatus, position: newPosition });
+        tasksInTargetColumn.splice(newPosition, 0, { ...activeTaskItem, status: overStatus, position: newPosition });
         const updatedColumnTasks = tasksInTargetColumn.map((t, i) => ({ ...t, position: i }));
         const tasksOutsideColumn = prev.filter((t) => t.status !== overStatus && t.id !== activeId);
 
         return [...tasksOutsideColumn, ...updatedColumnTasks];
-      });
-    } else if (overTask && activeTask.status === overStatus) {
-      const columnTasks = optimisticTasks
-        .filter((t) => t.status === overStatus)
-        .sort((a, b) => a.position - b.position);
+      }
 
-      const activeIndex = columnTasks.findIndex((t) => t.id === activeId);
-      const overIndex = columnTasks.findIndex((t) => t.id === overId);
+      if (overTask && activeTaskItem.status === overStatus) {
+        const columnTasks = prev
+          .filter((t) => t.status === overStatus)
+          .sort((a, b) => a.position - b.position);
 
-      if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-        setOptimisticTasks((prev) => {
-          if (!prev) return prev;
+        const activeIndex = columnTasks.findIndex((t) => t.id === activeId);
+        const overIndex = columnTasks.findIndex((t) => t.id === overId);
+
+        if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
           const reordered = arrayMove(columnTasks, activeIndex, overIndex);
           const updatedColumnTasks = reordered.map((t, i) => ({ ...t, position: i }));
           const tasksOutsideColumn = prev.filter((t) => t.status !== overStatus);
           return [...tasksOutsideColumn, ...updatedColumnTasks];
-        });
+        }
       }
-    }
+
+      return prev;
+    });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || !optimisticTasks) {
+    if (!over) {
       if (activeTask) {
         setDroppingTask(activeTask);
         setTimeout(() => setDroppingTask(null), DROP_ANIMATION_DURATION);
       }
       setActiveTask(null);
-      setOptimisticTasks(null);
+      fetchTasks(projectId).then(setTasks);
       return;
     }
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const draggedTask = optimisticTasks.find((t) => t.id === activeId);
-    const overTask = optimisticTasks.find((t) => t.id === overId);
+    const draggedTask = tasks.find((t) => t.id === activeId);
+    const overTask = tasks.find((t) => t.id === overId);
 
     if (!draggedTask) {
       if (activeTask) {
@@ -193,12 +183,11 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
         setTimeout(() => setDroppingTask(null), DROP_ANIMATION_DURATION);
       }
       setActiveTask(null);
-      setOptimisticTasks(null);
       return;
     }
 
     const overStatus = overTask ? overTask.status : (overId as TaskStatus);
-    const columnTasks = optimisticTasks
+    const columnTasks = tasks
       .filter((t) => t.status === overStatus)
       .sort((a, b) => a.position - b.position);
 
@@ -215,8 +204,7 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
       newPosition = overIndex >= 0 ? overIndex : columnTasks.length;
     }
 
-    setOptimisticTasks((prev) => {
-      if (!prev) return prev;
+    setTasks((prev) => {
       const otherTasks = prev.filter((t) => t.id !== activeId);
       const tasksInColumn = otherTasks
         .filter((t) => t.status === overStatus)
@@ -230,7 +218,6 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
       return [...tasksOutsideColumn, ...updatedColumnTasks];
     });
 
-    setPendingMove({ taskId: activeId, status: overStatus, position: newPosition });
     setDroppingTask(activeTask);
     setActiveTask(null);
     setTimeout(() => setDroppingTask(null), DROP_ANIMATION_DURATION);
@@ -240,8 +227,18 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
 
   const handleCreateTask = async (title: string, description: string): Promise<string> => {
     const task = await createTask(title, createStatus, description);
+    setTasks((prev) => [...prev, task]);
     setIsCreateModalOpen(false);
     return task.id;
+  };
+
+  const handleTaskDeleted = (taskId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
+  const handleTaskUpdated = async () => {
+    const updatedTasks = await fetchTasks(projectId);
+    setTasks(updatedTasks);
   };
 
   return (
@@ -286,6 +283,8 @@ export function Board({ projectId, requestAddTask }: BoardProps) {
           projectId={projectId}
           task={editingTask}
           mode="edit"
+          onDeleted={handleTaskDeleted}
+          onUpdated={handleTaskUpdated}
         />
       )}
     </>

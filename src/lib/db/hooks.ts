@@ -5,6 +5,14 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "./index";
 import type { Project, Task, TaskImage, TaskStatus } from "../types";
 
+export async function fetchTasks(projectId: string): Promise<Task[]> {
+  return db.tasks.where("projectId").equals(projectId).toArray();
+}
+
+export async function fetchProjects(): Promise<Project[]> {
+  return db.projects.orderBy("position").toArray();
+}
+
 export function useProjects() {
   const projects = useLiveQuery(() =>
     db.projects.orderBy("position").toArray()
